@@ -18,15 +18,3 @@ SQLite database for users
 
 Modular frontend structure
 
-📂 Project Structure
-client/
-  ├─ src/
-  │   ├─ Login.js
-  │   ├─ Lobby.js
-  │   ├─ Game.js
-  │   ├─ assets/
-  │   └─ Login.css
-
-server/
-  ├─ app.py
-  ├─ database.db
