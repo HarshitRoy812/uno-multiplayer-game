@@ -57,8 +57,12 @@ function Login()
                 return setMessage(data.error || "Registration failed.");
             }
 
+            
             setMessage("Registration successful! You can now log in.");
-            switchMode(true);            
+
+            setTimeout(() => {
+                switchMode(true); 
+            },2000);           
         }
         catch (error)
         {
@@ -97,6 +101,7 @@ function Login()
                 return setMessage(data.error || 'Login failed!')
             }   
 
+            localStorage.setItem('token',data.token);
             setMessage("Login successful! Redirecting...");
         }
         catch (error)
@@ -124,7 +129,7 @@ function Login()
 
                 <div className = 'card'>
 
-                    { isLogin && 
+                    {isLogin && 
                     <>
 
                     <form onSubmit = {handleLogin}>
@@ -149,7 +154,7 @@ function Login()
                     
                     </>}
 
-                    { !isLogin && 
+                    {!isLogin && 
                     <>
                     <form onSubmit = {handleRegister}>
                         <div className = 'inputRow'>
