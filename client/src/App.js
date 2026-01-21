@@ -1,12 +1,15 @@
 import React from 'react';
-import './App.css';
 import Login from './Login.js';
+import Lobby from './Lobby.js';
+import Layout from './Layout.js';
 
 function App()
 {
     return (
         
-        <Login />
+        <Layout>
+            <Lobby />
+        </Layout>
 
     )
 }

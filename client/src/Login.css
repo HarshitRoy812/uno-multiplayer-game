@@ -5,18 +5,6 @@ html,body,#root
     height: 100%;
     margin : 0;
 }
-.page
-{
-    display : flex;
-    justify-content: center;
-    align-items: center;
-    background-color : #c0392b;
-    background-image : url('./imgs/bg_uno.png');
-    background-repeat: no-repeat;
-    background-size: cover;
-        background-position: center;
-    min-height: 100vh;
-}
 
 .wrapper
 {
