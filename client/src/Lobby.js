@@ -25,6 +25,10 @@ function Lobby()
 
     const [showRules,setShowRules] = useState(false);
 
+    const [roomMode,setRoomMode] = useState(null);
+
+    const [maxCapacity,setMaxCapacity] = useState(2);
+
     return (
         <div className = 'lobby'>
         
@@ -41,6 +45,72 @@ function Lobby()
                 </div>
 
             </div>
+
+            <div className = 'lobby-center'>
+
+                {roomMode == null && 
+                <>
+                    <div className = 'lobby-navigator'>
+
+                        <button className = 'create-room-btn' onClick = {() => setRoomMode('create')}> <span className = 'create-room-text'> CREATE A ROOM </span> </button>
+                        <span className = 'or-separator'> OR </span>
+                        <button className = 'join-room-btn' onClick = {() => setRoomMode('join')}> <span className = 'join-room-text'> JOIN A ROOM </span> </button>
+
+                    </div>
+                </>}
+
+                {roomMode == 'create' && 
+                <>
+                    <div className = 'create-room'>
+
+                        <div className = 'room-capacity'>
+                            <h2> Select the max number of players </h2>
+
+                            <div className = 'counter'>
+                                <button className = 'decrement' onClick = {() => setMaxCapacity(n => Math.max(2,n - 1))}> - </button>
+                                <input type = 'text' className = 'number' value = {maxCapacity} readOnly/>
+                                <button className = 'increment' onClick = {() => setMaxCapacity(n => Math.max(2,n + 1))}> + </button>
+                            </div>
+                            
+                        </div>
+
+                        <div className = 'room-navigator'>
+
+                            <button className = 'back-btn' onClick = {() => setRoomMode(null)}> Go Back </button>
+                            <button className = 'finalize-create-room-btn'> CREATE ROOM</button>
+                        </div>
+
+
+                    </div>
+                </>}
+
+                {roomMode == 'join' &&
+                <>
+                    <div className = 'join-room'>
+
+                        <div className = 'room-link'>
+                            <input type = 'text' placeholder = 'ENTER ROOM CODE TO JOIN' className = 'input-room' />
+                            <button className = 'finalize-join-room-btn'> JOIN ROOM </button>
+                        </div>
+
+                        <div className = 'join-room-back'>
+                            <button className = 'back-btn' onClick = {() => setRoomMode(null)}> Go Back </button>
+                        </div>
+
+                    </div>
+
+                </>}
+
+            </div>
+
+            
+
+
+
+
+
+
+
 
            {showRules && (
             <div className = 'modalOverlay' onClick = {() => setShowRules(false)}>
