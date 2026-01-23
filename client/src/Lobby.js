@@ -1,6 +1,7 @@
 import React, {useState} from 'react';
 import './Lobby.css';
 import {ReactComponent as LogoutIcon} from './imgs/exit-icon.svg';
+import {ReactComponent as BackIcon} from './imgs/back-icon.svg';
 import Robot from './imgs/profile_pics/robot.svg';
 import Cat from './imgs/profile_pics/cat.svg';
 import Astronaut from './imgs/profile_pics/astronaut.svg';
@@ -25,9 +26,15 @@ function Lobby()
 
     const [showRules,setShowRules] = useState(false);
 
-    const [roomMode,setRoomMode] = useState(null);
-
     const [maxCapacity,setMaxCapacity] = useState(2);
+    
+    const [view,setView] = useState('home');
+
+    const [playersJoined,setPlayersJoined] = useState(1);
+
+    const [roomCode,setRoomCode] = useState('X2GADTT');
+
+    const [canStart,setCanStart] = useState(false);
 
     return (
         <div className = 'lobby'>
@@ -48,18 +55,18 @@ function Lobby()
 
             <div className = 'lobby-center'>
 
-                {roomMode == null && 
+                {view == 'home' && 
                 <>
                     <div className = 'lobby-navigator'>
 
-                        <button className = 'create-room-btn' onClick = {() => setRoomMode('create')}> <span className = 'create-room-text'> CREATE A ROOM </span> </button>
+                        <button className = 'create-room-btn' onClick = {() => setView('create')}> <span className = 'create-room-text'> CREATE A ROOM </span> </button>
                         <span className = 'or-separator'> OR </span>
-                        <button className = 'join-room-btn' onClick = {() => setRoomMode('join')}> <span className = 'join-room-text'> JOIN A ROOM </span> </button>
+                        <button className = 'join-room-btn' onClick = {() => setView('join')}> <span className = 'join-room-text'> JOIN A ROOM </span> </button>
 
                     </div>
                 </>}
 
-                {roomMode == 'create' && 
+                {view == 'create' && 
                 <>
                     <div className = 'create-room'>
 
@@ -76,15 +83,18 @@ function Lobby()
 
                         <div className = 'room-navigator'>
 
-                            <button className = 'back-btn' onClick = {() => setRoomMode(null)}> Go Back </button>
-                            <button className = 'finalize-create-room-btn'> CREATE ROOM</button>
+                            <button className = 'back-btn' onClick = {() => setView('home')}> Go Back </button>
+                            <button className = 'finalize-create-room-btn' onClick = {() => setView('waiting')}> CREATE ROOM </button>
                         </div>
 
 
                     </div>
                 </>}
 
-                {roomMode == 'join' &&
+
+
+
+                {view == 'join' &&
                 <>
                     <div className = 'join-room'>
 
@@ -94,17 +104,67 @@ function Lobby()
                         </div>
 
                         <div className = 'join-room-back'>
-                            <button className = 'back-btn' onClick = {() => setRoomMode(null)}> Go Back </button>
+                            <button className = 'back-btn' onClick = {() => setView('home')}> Go Back </button>
                         </div>
 
                     </div>
 
                 </>}
 
+
+                {view == 'waiting' && 
+                <>
+
+                    <div className = 'waiting-room'>
+
+                        <div className = 'joined-count'>
+
+                            <h3 className = 'joined-heading'> Players Joined : <span> {playersJoined} / {maxCapacity} </span></h3>
+
+                        </div>
+
+                        <div className = 'joined-box'>
+
+                            <div className = 'player-row'>
+
+                                <img src = {profile_pic} alt = 'profile_pic' className = 'profile-pic' />
+                                <span className = 'host-text'> Harsh (Host) </span>
+
+                            </div>
+
+                            <p className = 'waitingText'> Waiting for players  
+                                <span className = 'dots a'>.</span>
+                                <span className = 'dots'>.</span>
+                                <span className = 'dots'>.</span>
+                             </p>
+
+                        </div>
+
+                        <div className = 'code-box'>
+
+                            <div className = 'code-left'>
+                                <span className = 'code-text'> Room Code </span>
+                                <span className = 'room-code'> {roomCode} </span>
+                            </div>
+
+                            <button className = 'copy-code-btn'> Copy Code ! </button>
+
+                        </div>
+
+                        <button className = 'start-game-btn' disabled = {!canStart}> Start Game </button>
+
+                        <button className = 'backToLobbyBtn' onClick = {() => setView('create')}> Back to Lobby <BackIcon className = 'back-icon' /> </button>
+
+                    </div>
+
+
+                </>}
+
+
             </div>
 
             
-
+                
 
 
 
