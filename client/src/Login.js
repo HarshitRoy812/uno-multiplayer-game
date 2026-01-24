@@ -1,6 +1,7 @@
 import React,{useState} from 'react';
 import './Login.css';
 import logo from './imgs/logo.png';
+import {useNavigate} from 'react-router-dom';
 
 function Login()
 {
@@ -13,6 +14,8 @@ function Login()
     const [message,setMessage] = useState("");
     const [loading,setLoading] = useState(false);
     const [isErr,setIsErr] = useState(false);
+
+    const navigate = useNavigate();
 
 
     const switchMode = (isLoginMode) => 
@@ -102,7 +105,14 @@ function Login()
             }   
 
             localStorage.setItem('token',data.token);
+            console.log(data.token);
             setMessage("Login successful! Redirecting...");
+            
+
+            setTimeout(() => {
+                navigate('/lobby');
+            },2000);
+
         }
         catch (error)
         {

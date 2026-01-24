@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import sqlite3
 import jwt
-import datetime
+from datetime import datetime,timedelta,timezone
 from werkzeug.security import generate_password_hash, check_password_hash 
 
 
@@ -57,7 +57,7 @@ def register():
         
         return jsonify({'ok' : True,'message' : 'Registered successfully!'}),201
     
-    except sqlite3.IntegerityError:
+    except sqlite3.IntegrityError:
         return jsonify({'ok' : False,'error' : 'Email already registered.'}),409
     
     finally:
@@ -82,21 +82,60 @@ def login():
     row = cur.fetchone()
     conn.close()
     
-    if not row or not check_password_hash(row['password_hash'],password):
+    if not row or not check_password_hash(row[2],password):
         return jsonify({'ok' : False, 'error' : 'Invalid email or password.'}),401
     
-    now = datetime.datetime.utcnow()
+    now = datetime.now(timezone.utc)
     
     payload = {
-        'sub' : str(row['id']),
-        'email' : row['email'],
+        'sub' : str(row[0]),
+        'email' : row[1],
         'iat' : now,
-        'exp' : now + datetime.timedelta(days = 7)
+        'exp' : now + timedelta(days = 7),
     }
     
     token = jwt.encode(payload,JWT_SECRET,algorithm = JWT_ALG)
     
     return jsonify({'ok' : True, 'token' : token}),200
+
+
+@app.route('/api/me',methods = ['GET'])
+def me():
+    
+    auth = request.headers.get('Authorization','')
+    
+    if not auth.startswith('Bearer '):
+        return jsonify({'ok' : False,'error' : 'Missing token'}),401 
+    
+    token = auth.split(' ')[1]
+    
+    try:
+        payload = jwt.decode(token,JWT_SECRET,algorithms = [JWT_ALG])
+    except jwt.ExpiredSignatureError:
+        return jsonify({'ok' : False,'error' : 'Token expired'}),401
+    except jwt.InvalidTokenError:
+        return jsonify({'ok' : False,'error' : 'Invalid token'}),401
+
+    user_id = payload['sub']
+    
+    conn = sqlite3.connect(DB_NAME)
+    cur = conn.cursor()
+    
+    cur.execute('SELECT id,name,email FROM users where id = ?',(user_id,))
+    user = cur.fetchone()
+    conn.close()
+    print(user)
+    if not user:
+        return jsonify({'ok' : False,'error' : 'User not found'}),404
+    
+    return jsonify({
+        'ok' : True,
+        'user' : {
+            'id' : user[0],
+            'name' : user[1],
+            'email' : user[2]
+        }
+    })
 
 
 if __name__ == '__main__':

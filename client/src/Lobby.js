@@ -1,4 +1,5 @@
-import React, {useState} from 'react';
+import React, {useState,useEffect} from 'react';
+import {useNavigate} from 'react-router-dom';
 import './Lobby.css';
 import {ReactComponent as LogoutIcon} from './imgs/exit-icon.svg';
 import {ReactComponent as BackIcon} from './imgs/back-icon.svg';
@@ -36,6 +37,64 @@ function Lobby()
 
     const [canStart,setCanStart] = useState(false);
 
+    const [name,setName] = useState(null);
+
+    const navigate = useNavigate();
+
+    useEffect(() => {
+
+        const fetchUser = async () => {
+
+            const token = localStorage.getItem('token');
+            console.log(token);
+            if (!token)
+            {
+                navigate('/');
+                return;
+            }
+
+            try 
+            {
+                const response = await fetch('http://localhost:5000/api/me', {
+                    headers : {
+                        'Authorization' : `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!data.ok){
+                    localStorage.removeItem('token');
+                    navigate('/');
+                    return;
+                }
+
+                setName(data.user.name);
+            }
+            catch (error)
+            {
+                console.error(error);
+                localStorage.removeItem('token');
+                navigate('/');
+            }
+            finally 
+            {
+                console.log("ok");
+            }
+    
+        }
+
+        fetchUser();
+        
+    },[]);
+
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('profile_pic_index');
+        navigate('/');
+    }
+
+
     return (
         <div className = 'lobby'>
         
@@ -43,12 +102,12 @@ function Lobby()
 
                 <div className = 'lobby-top-left'>
                     <img src = {profile_pic} alt = 'profile_pic' className = 'profile-pic' />
-                    <h2 className = 'welcome-text'> Harsh </h2>
+                    <h2 className = 'welcome-text'> {name} </h2>
                 </div>
                 
                 <div className = 'lobby-top-right'>
                     <a className = 'how-to-play' onClick = {() => setShowRules(true)}> How to Play </a>
-                    <button className = 'logout-btn'> Logout <LogoutIcon className = 'logout-icon' /> </button>
+                    <button className = 'logout-btn' onClick = {handleLogout}> Logout <LogoutIcon className = 'logout-icon' /> </button>
                 </div>
 
             </div>
@@ -128,7 +187,7 @@ function Lobby()
                             <div className = 'player-row'>
 
                                 <img src = {profile_pic} alt = 'profile_pic' className = 'profile-pic' />
-                                <span className = 'host-text'> Harsh (Host) </span>
+                                <span className = 'host-text'> {name} (Host) </span>
 
                             </div>
 
