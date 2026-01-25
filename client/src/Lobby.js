@@ -1,4 +1,4 @@
-import React, {useState,useEffect} from 'react';
+import {useState,useEffect} from 'react';
 import {useNavigate} from 'react-router-dom';
 import './Lobby.css';
 import {ReactComponent as LogoutIcon} from './imgs/exit-icon.svg';
@@ -10,6 +10,8 @@ import Ninja from './imgs/profile_pics/ninja.svg';
 import Bunny from './imgs/profile_pics/bunny.svg';
 import Coolcap from './imgs/profile_pics/coolcap.svg';
 import Gamer from './imgs/profile_pics/gamer.svg';
+
+import socket from './socket';
 
 const avatars = [Robot, Cat, Astronaut, Ninja, Bunny, Coolcap, Gamer];
 
@@ -33,20 +35,46 @@ function Lobby()
 
     const [playersJoined,setPlayersJoined] = useState(1);
 
-    const [roomCode,setRoomCode] = useState('X2GADTT');
+    const [roomCode,setRoomCode] = useState(null);
 
     const [canStart,setCanStart] = useState(false);
 
     const [name,setName] = useState(null);
 
+
     const navigate = useNavigate();
 
+    // ----------------------------------------------------------------------
+
+
+    // SOCKET LISTENERS
+    useEffect(() => {
+
+        socket.connect();
+
+        socket.on("connect", () => { 
+        console.log("✅ connected, id =", socket.id);
+        });
+
+        socket.on('room_created',(data) => {
+            setRoomCode(data.room_code);
+        });
+        
+        return () => {
+            socket.off('connect');
+            socket.disconnect();         
+        }; 
+
+    },[]);
+
+
+    // GET USER INFO FROM SERVER
     useEffect(() => {
 
         const fetchUser = async () => {
 
             const token = localStorage.getItem('token');
-            console.log(token);
+
             if (!token)
             {
                 navigate('/');
@@ -73,14 +101,11 @@ function Lobby()
             }
             catch (error)
             {
-                console.error(error);
+                console.error(error); 
                 localStorage.removeItem('token');
                 navigate('/');
             }
-            finally 
-            {
-                console.log("ok");
-            }
+      
     
         }
 
@@ -92,6 +117,11 @@ function Lobby()
         localStorage.removeItem('token');
         localStorage.removeItem('profile_pic_index');
         navigate('/');
+    }
+
+    const handleCreateRoom = () => {
+        setView('waiting'); 
+        socket.emit('create_room');
     }
 
 
@@ -143,7 +173,7 @@ function Lobby()
                         <div className = 'room-navigator'>
 
                             <button className = 'back-btn' onClick = {() => setView('home')}> Go Back </button>
-                            <button className = 'finalize-create-room-btn' onClick = {() => setView('waiting')}> CREATE ROOM </button>
+                            <button className = 'finalize-create-room-btn' onClick = {handleCreateRoom}> CREATE ROOM </button>
                         </div>
 
 

@@ -4,13 +4,17 @@ import sqlite3
 import jwt
 from datetime import datetime,timedelta,timezone
 from werkzeug.security import generate_password_hash, check_password_hash 
+from flask_socketio import SocketIO, join_room, leave_room, emit
+import random
+import string
 
 
 JWT_SECRET = 'random'
 JWT_ALG = 'HS256'
 
 app = Flask(__name__)
-CORS(app,resources = {r"/api/*": {'origins' : 'http://localhost:3000'}},supports_credentials=False)
+CORS(app,resources = {r"/api/*": {'origins' : '*'}})
+socketio = SocketIO(app, cors_allowed_origins = '*')
 
 DB_NAME = 'database.db'
 
@@ -31,7 +35,13 @@ def init_db():
     
     conn.commit()
     conn.close()
-        
+    
+    
+def generate_room_code():
+    return ''.join(random.choices(string.ascii_uppercase + string.digits,k = 6))
+    
+    
+# ------------- ROUTES --------        
 
 @app.route('/api/register',methods = ['POST'])
 def register():
@@ -124,7 +134,7 @@ def me():
     cur.execute('SELECT id,name,email FROM users where id = ?',(user_id,))
     user = cur.fetchone()
     conn.close()
-    print(user)
+   
     if not user:
         return jsonify({'ok' : False,'error' : 'User not found'}),404
     
@@ -136,8 +146,19 @@ def me():
             'email' : user[2]
         }
     })
+    
+@socketio.on('connect')
+def on_connect():
+    print("client connected")
 
+@socketio.on('create_room')
+def create_room():
+    room_code = generate_room_code()
+    
+    emit('room_created',{
+        'room_code' : room_code
+    })
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug = True)
+    socketio.run(app,port = 5000,debug = True)  
