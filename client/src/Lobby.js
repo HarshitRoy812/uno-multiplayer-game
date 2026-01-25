@@ -33,13 +33,17 @@ function Lobby()
     
     const [view,setView] = useState('home');
 
-    const [playersJoined,setPlayersJoined] = useState(1);
+    const [playersJoined,setPlayersJoined] = useState(0);
 
     const [roomCode,setRoomCode] = useState(null);
 
     const [canStart,setCanStart] = useState(false);
 
     const [name,setName] = useState(null);
+
+    const [joinRoomCode,setJoinRoomCode] = useState(null);
+
+    const [joinErr,setJoinErr] = useState(null); 
 
 
     const navigate = useNavigate();
@@ -52,16 +56,42 @@ function Lobby()
 
         socket.connect();
 
-        socket.on("connect", () => { 
-        console.log("✅ connected, id =", socket.id);
-        });
 
         socket.on('room_created',(data) => {
             setRoomCode(data.room_code);
+            setPlayersJoined(1);
+            setView('waiting');
         });
+
+
+        socket.on('player_joined',(data) => {
+            setPlayersJoined(data.count);
+
+            if (playersJoined >= maxCapacity)
+            {
+                setCanStart(true);
+            }
+        })
+
+        socket.on('join_success',(data) => {
+            setRoomCode(data.room_code);
+            setPlayersJoined(data.count);
+            setMaxCapacity(data.maxCapacity);
+            setView('waiting');
+        })
+
+        socket.on('join_error',(data) => {
+            setJoinErr(data.message);
+        })
+
+
         
         return () => {
             socket.off('connect');
+            socket.off('room_created');
+            socket.off('player_joined');
+            socket.off('join_success');
+            socket.off('join_error');
             socket.disconnect();         
         }; 
 
@@ -119,9 +149,20 @@ function Lobby()
         navigate('/');
     }
 
-    const handleCreateRoom = () => {
-        setView('waiting'); 
-        socket.emit('create_room');
+    const handleCreateRoom = () => { 
+        socket.emit('create_room',{
+            'maxCapacity' : maxCapacity
+        });  
+    }
+
+    const handleJoinRoom = () => {
+
+        if (!joinRoomCode.trim()) return;
+
+        socket.emit('join_room',{
+            'room_code' : joinRoomCode.trim().toUpperCase()
+        });
+
     }
 
 
@@ -188,8 +229,8 @@ function Lobby()
                     <div className = 'join-room'>
 
                         <div className = 'room-link'>
-                            <input type = 'text' placeholder = 'ENTER ROOM CODE TO JOIN' className = 'input-room' />
-                            <button className = 'finalize-join-room-btn'> JOIN ROOM </button>
+                            <input type = 'text' value = {joinRoomCode} onChange = {(e) => setJoinRoomCode(e.target.value)} placeholder = 'ENTER ROOM CODE TO JOIN' className = 'input-room' />
+                            <button className = 'finalize-join-room-btn' onClick = {handleJoinRoom}> JOIN ROOM </button>
                         </div>
 
                         <div className = 'join-room-back'>

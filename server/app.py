@@ -18,6 +18,8 @@ socketio = SocketIO(app, cors_allowed_origins = '*')
 
 DB_NAME = 'database.db'
 
+rooms = {}
+
 def init_db():
     
     conn = sqlite3.connect(DB_NAME)
@@ -147,17 +149,67 @@ def me():
         }
     })
     
+    
+    
+    
 @socketio.on('connect')
 def on_connect():
     print("client connected")
 
+
+
 @socketio.on('create_room')
-def create_room():
+def handle_create_room(data):
     room_code = generate_room_code()
+    
+    rooms[room_code] = {
+        'players' : [request.sid],
+        'maxCapacity' : data['maxCapacity']
+    }
+    
+    join_room(room_code)
     
     emit('room_created',{
         'room_code' : room_code
     })
+
+
+@socketio.on('join_room')
+def handle_join_room(data):
+    
+    room_code = data['room_code']
+    
+    if room_code not in rooms.keys():
+        emit('join_error',{
+            'message' : 'Room not found!'
+        })
+        return
+
+
+    if (len(rooms[room_code]['players']) >= rooms[room_code]['maxCapacity']):
+        emit('join_error',{
+            'message' : 'Room is full!'
+        })
+        return
+        
+    
+    rooms[room_code]['players'].append(request.sid)
+    
+    join_room(room_code)
+    
+    socketio.emit('player_joined',{
+        'count' : len(rooms[room_code]['players'])
+    },room = room_code)
+    
+    emit('join_success',{
+        'room_code' : room_code,
+        'count' : len(rooms[room_code]['players']),
+        'maxCapacity' : rooms[room_code]['maxCapacity']
+    })
+        
+    
+
+
 
 if __name__ == '__main__':
     init_db()
