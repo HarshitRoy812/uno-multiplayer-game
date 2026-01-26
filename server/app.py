@@ -153,7 +153,7 @@ def me():
     
     
 @socketio.on('connect')
-def on_connect():
+def on_connect():   
     print("client connected")
 
 
@@ -163,14 +163,20 @@ def handle_create_room(data):
     room_code = generate_room_code()
     
     rooms[room_code] = {
-        'players' : [request.sid],
+        'players' : [{
+            'id' : request.sid,
+            'name' : data['name'],
+            'prof_pic' : data['prof_pic']
+            }],
         'maxCapacity' : data['maxCapacity']
     }
     
     join_room(room_code)
     
-    emit('room_created',{
-        'room_code' : room_code
+    emit('room_update',{
+        'room_code' : room_code,
+        'players' : rooms[room_code]['players'],
+        'maxCapacity' : rooms[room_code]['maxCapacity'], 
     })
 
 
@@ -193,22 +199,44 @@ def handle_join_room(data):
         return
         
     
-    rooms[room_code]['players'].append(request.sid)
+    rooms[room_code]['players'].append({
+        'id' : request.sid,
+        'name' : data['name'],
+        'prof_pic' : data['prof_pic']
+    })
     
     join_room(room_code)
     
-    socketio.emit('player_joined',{
-        'count' : len(rooms[room_code]['players'])
-    },room = room_code)
-    
-    emit('join_success',{
-        'room_code' : room_code,
-        'count' : len(rooms[room_code]['players']),
-        'maxCapacity' : rooms[room_code]['maxCapacity']
+    socketio.emit('room_update',{
+            'room_code' : room_code,
+            'players' : rooms[room_code]['players'],
+            'maxCapacity' : rooms[room_code]['maxCapacity'],
     })
-        
-    
 
+
+
+@socketio.on('disconnect')
+def on_disconnect():
+    
+    id = request.sid
+    
+    rooms_to_remove = []
+    
+    for room_code,room in rooms.items():
+        
+        room['players'] = [player for player in room['players'] if player['id'] != id]
+    
+        if len(room['players']) == 0:
+            rooms_to_remove.append(room_code)
+        else:
+            socketio.emit('room_update',{
+                'room_code' : room_code,
+                'players' : rooms[room_code]['players'],
+                'maxCapacity' : rooms[room_code]['maxCapacity'],
+            })
+            
+    for rc in rooms_to_remove:
+        del rooms[rc]
 
 
 if __name__ == '__main__':

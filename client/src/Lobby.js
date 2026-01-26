@@ -33,20 +33,21 @@ function Lobby()
     
     const [view,setView] = useState('home');
 
-    const [playersJoined,setPlayersJoined] = useState(0);
+    const [roomCode,setRoomCode] = useState("");
 
-    const [roomCode,setRoomCode] = useState(null);
-
-    const [canStart,setCanStart] = useState(false);
-
-    const [name,setName] = useState(null);
+     const [name,setName] = useState(null);
 
     const [joinRoomCode,setJoinRoomCode] = useState(null);
 
     const [joinErr,setJoinErr] = useState(null); 
 
+    const [players,setPlayers] = useState([]);
+
 
     const navigate = useNavigate();
+
+    const playersJoined = players.length;
+    const canStart = playersJoined >= maxCapacity;
 
     // ----------------------------------------------------------------------
 
@@ -56,27 +57,10 @@ function Lobby()
 
         socket.connect();
 
-
-        socket.on('room_created',(data) => {
+        socket.on('room_update',(data) => {
             setRoomCode(data.room_code);
-            setPlayersJoined(1);
-            setView('waiting');
-        });
-
-
-        socket.on('player_joined',(data) => {
-            setPlayersJoined(data.count);
-
-            if (playersJoined >= maxCapacity)
-            {
-                setCanStart(true);
-            }
-        })
-
-        socket.on('join_success',(data) => {
-            setRoomCode(data.room_code);
-            setPlayersJoined(data.count);
             setMaxCapacity(data.maxCapacity);
+            setPlayers(data.players)
             setView('waiting');
         })
 
@@ -87,10 +71,8 @@ function Lobby()
 
         
         return () => {
-            socket.off('connect');
-            socket.off('room_created');
-            socket.off('player_joined');
-            socket.off('join_success');
+
+            socket.off('room_update');
             socket.off('join_error');
             socket.disconnect();         
         }; 
@@ -143,26 +125,40 @@ function Lobby()
         
     },[]);
 
+    const handleJoinGoBack = () => {
+        setJoinErr("");
+        setJoinRoomCode("");
+        setView('home');
+    }
+
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('profile_pic_index');
         navigate('/');
-    }
+    }   
 
     const handleCreateRoom = () => { 
         socket.emit('create_room',{
-            'maxCapacity' : maxCapacity
+            'maxCapacity' : maxCapacity,
+            'name' : name,
+            'prof_pic' : profile_pic
         });  
     }
 
     const handleJoinRoom = () => {
 
+        if (joinRoomCode == null) {
+            setJoinErr('Room code cannot be empty!');
+            return;
+        }
+
         if (!joinRoomCode.trim()) return;
 
         socket.emit('join_room',{
-            'room_code' : joinRoomCode.trim().toUpperCase()
+            'room_code' : joinRoomCode.trim().toUpperCase(),
+            'name' : name,
+            'prof_pic' : profile_pic
         });
-
     }
 
 
@@ -233,8 +229,10 @@ function Lobby()
                             <button className = 'finalize-join-room-btn' onClick = {handleJoinRoom}> JOIN ROOM </button>
                         </div>
 
+                        {joinErr && <span className = 'join-error'> {joinErr} </span> }
+
                         <div className = 'join-room-back'>
-                            <button className = 'back-btn' onClick = {() => setView('home')}> Go Back </button>
+                            <button className = 'back-btn' onClick = {handleJoinGoBack}> Go Back </button>
                         </div>
 
                     </div>
@@ -255,18 +253,27 @@ function Lobby()
 
                         <div className = 'joined-box'>
 
-                            <div className = 'player-row'>
+                            {players.map((player,index) => {
+                                return (
+                                    <div className = 'player-row' key = {player.id}>
 
-                                <img src = {profile_pic} alt = 'profile_pic' className = 'profile-pic' />
-                                <span className = 'host-text'> {name} (Host) </span>
+                                        <img src = {player.prof_pic} alt = 'profile_pic' className = 'profile-pic' />
+                                        <span className = 'host-text'> {player.name} {index == 0 && '(Host)'} </span>
 
-                            </div>
+                                    </div>
+                                )
+                            })}
 
-                            <p className = 'waitingText'> Waiting for players  
-                                <span className = 'dots a'>.</span>
-                                <span className = 'dots'>.</span>
-                                <span className = 'dots'>.</span>
-                             </p>
+                            {!canStart && (
+                                <div className = 'para'> 
+                                    <p className = 'waitingText'> Waiting for players  
+                                        <span className = 'dots a'>.</span>
+                                        <span className = 'dots'>.</span>
+                                        <span className = 'dots'>.</span>
+                                    </p>
+                                </div>
+                                    
+                            )}
 
                         </div>
 
